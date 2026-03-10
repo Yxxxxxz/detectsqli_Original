@@ -233,3 +233,64 @@ class SQLiDetector:
 
         print("\nConfusion Matrix")
         print(confusion_matrix(y_test, y_pred))
+     # ======================================================
+    # Save Full Model (Single PKL)
+    # ======================================================
+
+    def save_model(self, path="sqli_detector.pkl"):
+
+        joblib.dump(self, path)
+
+        print(f"\nModel saved to {path}")
+
+
+    # ======================================================
+    # Load Model
+    # ======================================================
+
+    @staticmethod
+    def load_model(path="sqli_detector.pkl"):
+
+        model = joblib.load(path)
+
+        print(f"Model loaded from {path}")
+
+        return model
+
+
+    # ======================================================
+    # Predict Payload
+    # ======================================================
+
+    def predict_single(self, payload):
+
+        if self.rf_model is None:
+            raise Exception("Model not loaded")
+
+        payload = self.normalize(payload)
+
+        sig_detect, reason = self.signature_check(payload)
+
+        if sig_detect:
+
+            return {
+                "prediction": "BLOCKED",
+                "stage": "Signature Detection",
+                "reason": reason
+            }
+
+        tokens = self.tokenize_sql(payload)
+
+        vec = self.get_vector(tokens)
+
+        vec_scaled = self.scaler.transform([vec])
+
+        pred = self.rf_model.predict(vec_scaled)[0]
+
+        prob = self.rf_model.predict_proba(vec_scaled)[0][1]
+
+        return {
+            "prediction": "BLOCKED" if pred == 1 else "ALLOW",
+            "stage": "RandomForest ML",
+            "malicious_probability": float(prob)
+        }
