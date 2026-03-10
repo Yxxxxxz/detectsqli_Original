@@ -3,3 +3,6 @@ pandas
 scikit-learn
 gensim
 joblib
+
+
+from src.sqli_detector import SQLiDetector
