@@ -185,12 +185,12 @@ class SQLiDetector:
 
         self.w2v_model = Word2Vec(
             sentences=X_train_tokens,
-            vector_size=150,
+            vector_size=80,
             window=5,
             min_count=2,
             workers=4,
             sg=1,
-            epochs=20
+            epochs=10
         )
 
         # Vectorization
@@ -207,10 +207,10 @@ class SQLiDetector:
         print("\nTraining RandomForest...")
 
         self.rf_model = RandomForestClassifier(
-            n_estimators=300,
+            n_estimators=150,
             class_weight="balanced",
             n_jobs=-1,
-            random_state=42
+            random_state=20
         )
 
         self.rf_model.fit(X_train_scaled, y_train)
