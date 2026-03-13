@@ -185,12 +185,12 @@ class SQLiDetector:
 
         self.w2v_model = Word2Vec(
             sentences=X_train_tokens,
-            vector_size=80,
+            vector_size=120,
             window=5,
             min_count=2,
             workers=4,
             sg=1,
-            epochs=10
+            epochs=40
         )
 
         # Vectorization
@@ -207,10 +207,10 @@ class SQLiDetector:
         print("\nTraining RandomForest...")
 
         self.rf_model = RandomForestClassifier(
-            n_estimators=150,
+            n_estimators=300,
             class_weight="balanced",
             n_jobs=-1,
-            random_state=20
+            random_state=42
         )
 
         self.rf_model.fit(X_train_scaled, y_train)
@@ -242,24 +242,36 @@ class SQLiDetector:
     # Save Model (Single PKL)
     # ======================================================
 
-    def save_model(self, path="sqli_detector.pkl"):
-
-        joblib.dump(self, path)
-
-        print(f"\nModel saved to {path}")
-
+    def save_model(self, path="models/sqli_detector.pkl"):
+        # แพ็กเฉพาะสมองที่เทรนแล้วใส่ Dictionary ให้ดึงง่ายๆ
+        data_to_save = {
+            'w2v_model': self.w2v_model,
+            'scaler': self.scaler,
+            'rf_model': self.rf_model
+        }
+        joblib.dump(data_to_save, path)
+        print(f"\n✅ Brain saved to {path}")
     # ======================================================
     # Load Model
     # ======================================================
 
     @staticmethod
-    def load_model(path="sqli_detector.pkl"):
-
-        model = joblib.load(path)
-
-        print(f"Model loaded from {path}")
-
-        return model
+    def load_model(path="models/sqli_detector.pkl"):
+        data = joblib.load(path)
+        new_detector = SQLiDetector() # สร้างหุ่นยนต์ตัวใหม่
+        
+        # ถ้าโหลดมาแล้วเป็น Dictionary (แบบใหม่ที่เราแก้)
+        if isinstance(data, dict):
+            new_detector.w2v_model = data.get('w2v_model')
+            new_detector.scaler = data.get('scaler')
+            new_detector.rf_model = data.get('rf_model')
+            print("✅ Brain extracted and linked to detector.")
+        else:
+            # กรณีโหลดไฟล์เก่ามา (Object)
+            new_detector = data
+            
+        print(f"✅ Model loaded from {path}")
+        return new_detector
 
     # ======================================================
     # Predict Payload
@@ -299,4 +311,3 @@ class SQLiDetector:
             "stage": "RandomForest ML",
             "malicious_probability": float(prob)
         }
-
